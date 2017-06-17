@@ -1,0 +1,33 @@
+import json
+import pandas as pd
+
+
+def toSerialDict():
+  data = {}
+  #Chart1 = This week position
+  #Date2 = This week's date
+  in_file_path = "us_billboard.psv"
+  df = pd.read_csv(in_file_path, sep='|')
+  total = df.shape[0]
+
+  for index, row in df.iterrows():
+    chart = str(row['Chart1']) # This week's position
+    date = str(row['Date2']) #This week's date
+
+    track = str(row['Track'])
+    artist = str(row['Artist'])
+    key = artist+"|"+track
+
+    if key in data.keys():
+      arr = data[key] # The array consisting of all the dates and position
+      arr[date]=chart
+    else:
+      data[key] = {date:chart}
+
+    print (index*100.0)/total;
+
+  with open('result.json', 'w') as fp:
+    json.dump(data, fp)
+
+toSerialDict()
+

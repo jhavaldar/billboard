@@ -45,19 +45,19 @@ var margin = {top: 20, right: 20, bottom: 30, left: 40},
  */ 
 
 
-var bxValue = function(d) {return +d.Length+2;}
+var bxValue = function(d) {return d.length;}
     bxScale = d3.scale.linear().range([1,width])
     bxMap = function(d) {return bxScale(bxValue(d))}
     bxAxis = d3.svg.axis().scale(bxScale).orient("bottom");
 
 // setup y
-var byValue = function(d) { return d.Chart;}, // data -> value
+var byValue = function(d) { return d.chart;}, // data -> value
     byScale = d3.scale.linear().range([height,1])
     byMap = function(d) { return byScale(byValue(d));}, // data -> display
     byAxis = d3.svg.axis().scale(byScale).orient("left");
 
 // setup fill color
-var cValue = function(d) { return d.Manufacturer;},
+var cValue = function(d) { return d.artist;},
     color = d3.scale.category10();
 
 // add the graph canvas to the body of the webpage
@@ -80,17 +80,19 @@ function parse_lengths(length) {
   return ret
 }
 
-var psv = d3.dsv("|", "text/plain");
+d3.json("lengths_chart_v2.json", function (data) {
 
-psv("us_billboard_lengths.psv", function (data) {
+  var r = 2.0
 
-  var r = 1.5;
+  d3.nest()
+    .key(function(d) { return d.artist+"|"+d.track; })
+    .entries(data);
 
-  // change string (from CSV) into a number format
   data.forEach(function(d) {
-    d.Length = parse_lengths(d.Length);
-    d.Chart = +d.Chart;
-    d.Chart = Math.pow(100-d.Chart, r);
+    d.length = parse_lengths(String(d.length));
+    d.chart = +d.chart;
+    d.chart = Math.pow(100-d.chart, r);
+    d.artist = d.artist;
   });
 
   // Don't want dots overlapping the axis soooo
@@ -134,7 +136,7 @@ psv("us_billboard_lengths.psv", function (data) {
           tooltip.transition()
                .duration(200)
                .style("opacity", .9);
-          tooltip.html(d["Track"] + "<br/> (" + bxValue(d) 
+          tooltip.html(d.track + "<br/> (" + bxValue(d) 
           + ", " + byValue(d) + ")")
                .style("left", (d3.event.pageX + 5) + "px")
                .style("top", (d3.event.pageY - 28) + "px");
@@ -144,7 +146,7 @@ psv("us_billboard_lengths.psv", function (data) {
                .duration(500)
                .style("opacity", 0);
       });
-
+/*
   // draw legend
   var legend = svg.selectAll(".legend")
       .data(color.domain())
@@ -166,9 +168,8 @@ psv("us_billboard_lengths.psv", function (data) {
       .attr("dy", ".35em")
       .style("text-anchor", "end")
       .text(function(d) { return d;})
-
+*/
 });
-
 
 
 
