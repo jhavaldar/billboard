@@ -14,7 +14,6 @@ def music_brainz_request(index, query_content, artist, log):
   musicbrainzngs.set_rate_limit(limit_or_interval=0.5)
   result = musicbrainzngs.search_recordings(query=query_content, artist=artist, primarytype='single')['recording-list']
 
-
   if len(result) > 0:
     result = result[0]
     if 'length' in result:
@@ -23,16 +22,13 @@ def music_brainz_request(index, query_content, artist, log):
       log.write(str(index) + "|" + artist + "|" + query_content)
       log.write("\n")
       return "N/A"
-    return millisecond_format(duration)
+    return duration/1000
   else:
     return "N/A"
 
 #For each artist in the Billboard chart file, print out their lengths
-def create_Lengths_File():
+def create_Lengths_File(fpath = "us_billboard.psv", out_file = "us_billboard_lengths.psv", log_file = "log.txt"):
 
-  fpath = "us_billboard.psv"
-  out_file = "us_billboard_lengths.psv"
-  log_file = "log.txt"
   log = open(log_file, 'a')
   f = open(out_file, 'a')
   df = pd.read_csv(fpath, sep='|')
@@ -45,9 +41,10 @@ def create_Lengths_File():
     track = row['Track']
     artist = row['Artist'].split(" featuring ")[0]
     date = str(row['Date2'])
+    date = date[4:6]+"-"+date[6:8]+"-"+date[0:4]
     music_brainz = music_brainz_request(index, track, artist, log)
     if music_brainz <> "N/A":
-      f.write(str(index) + "|" + chart + "|" + weeks + "|" + artist + "|" + track + "|" + date + "|" + music_brainz)
+      f.write(str(index) + "|" + chart + "|" + weeks + "|" + artist + "|" + track + "|" + date + "|" + str(music_brainz))
       f.write("\n")
     print ((index+0.0)/total) * 100
 
@@ -107,19 +104,43 @@ def removeDoubles():
 
   with open('lengths_chart.json', 'w') as fp:
     json.dump(data, fp)
-
+#Formats the data in an array, with javascript
 def reFormat(filepath):
-  with open(filepath) as data_file:    
+  with open(filepath) as data_file:  
     data = json.load(data_file)
   newdata = []
   for key in data:
-    length = data[key]['Length']
-    chart = data[key]['Chart']
-    artist, track =key.split("|")
-    arr = {'artist': artist, 'track':track, 'length': length, 'chart': chart}
-    newdata.append(arr)
-  with open('lengths_chart_v2.json', 'w') as fp:
+    arr = data[key]
+    newdict = {}
+    # arr contains artist|track: {date: chart}
+    artist, track = key.split("|")
+    #Create a new history object
+    history = []
+    for elt in arr:
+      newobj = {}
+      newobj['date'] = elt
+      newobj['chart'] = arr[elt]
+      history.append(newobj)
+    newdict['artist'] = artist
+    newdict['track'] = track
+    newdict['id'] = key
+    newdict['history'] = history
+    newdata.append(newdict)
+  with open('result_v2.json', 'w') as fp:
     json.dump(newdata, fp)
 
-removeDoubles()
-reFormat('lengths_chart.json')
+def readDates(filepath):
+  with open(filepath) as data_file:  
+    data = json.load(data_file)
+  #for each song
+  for block in data:
+    for key in block['history']:
+      date = key['date']
+      key['date'] = date[4:6]+"-"+date[6:8]+"-"+date[0:4]
+  with open('result_v3.json', 'w') as fp:
+    json.dump(data, fp)
+
+
+readDates('result_v2.json')
+
+

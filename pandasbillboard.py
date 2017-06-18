@@ -5,7 +5,7 @@ import musicbrainzngs
 
 def scrape_billboard():
   request_path = "http://www.umdmusic.com/default.asp?Lang=English&Chart=D"
-  out_file = "us_billboard.psv"
+  out_file = "us_billboard_v2.psv"
   log_path = "log.txt"
   f = open(out_file, 'a')
   log_file = open(log_path, 'a')
@@ -24,8 +24,6 @@ def scrape_billboard():
         request_path = "http://www.umdmusic.com/" + request_path
         m = re.match(".*ChDate=(\d+).*",request_path)
         chart_date = m.group(1)
-        if chart_date[0:4] <> '2017':
-          request_path = "" # Only count 2017 entries
     else:
       request_path=""
 
@@ -49,8 +47,7 @@ def scrape_billboard():
                         f.write(cell.contents[2].string.strip() + "|")
             if past_first_cell:
                 f.write(chart_date + "\n")
-
-
+                break
 
   f.close()
   log_file.close()
